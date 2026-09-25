@@ -1,0 +1,241 @@
+<html>
+<head>
+<title>nightscraper.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cf8e6d;}
+.s1 { color: #bcbec4;}
+.s2 { color: #bcbec4;}
+.s3 { color: #2aacb8;}
+.s4 { color: #6aab73;}
+.s5 { color: #7a7e85;}
+</style>
+</head>
+<body bgcolor="#191a1c">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+nightscraper.py</font>
+</center></td></tr></table>
+<pre><span class="s0">from </span><span class="s1">bs4 </span><span class="s0">import </span><span class="s1">BeautifulSoup</span>
+<span class="s0">import </span><span class="s1">requests</span>
+<span class="s0">import </span><span class="s1">re</span>
+<span class="s0">import </span><span class="s1">sys</span>
+<span class="s0">import </span><span class="s1">time</span>
+<span class="s0">from </span><span class="s1">tabulate </span><span class="s0">import </span><span class="s1">tabulate</span>
+<span class="s0">import </span><span class="s1">pandas </span><span class="s0">as </span><span class="s1">pd</span>
+<span class="s0">from </span><span class="s1">twisted</span><span class="s2">.</span><span class="s1">protocols</span><span class="s2">.</span><span class="s1">amp </span><span class="s0">import </span><span class="s1">Box</span>
+
+<span class="s1">dataset </span><span class="s2">= []</span>
+<span class="s1">choice </span><span class="s2">= </span><span class="s3">0</span>
+<span class="s1">picking </span><span class="s2">= </span><span class="s0">True</span>
+<span class="s1">headers </span><span class="s2">= {</span>
+    <span class="s4">&quot;User-Agent&quot;</span><span class="s2">: </span><span class="s4">&quot;Spiderbot&quot;</span>
+<span class="s2">}</span>
+
+<span class="s0">def </span><span class="s1">box</span><span class="s2">(</span><span class="s1">message</span><span class="s2">):</span>
+    <span class="s1">width </span><span class="s2">= </span><span class="s1">len</span><span class="s2">(</span><span class="s1">message</span><span class="s2">) + </span><span class="s3">2</span>
+
+    <span class="s1">print</span><span class="s2">(</span><span class="s4">&quot;┌&quot; </span><span class="s2">+ </span><span class="s4">&quot;─&quot; </span><span class="s2">* </span><span class="s1">width </span><span class="s2">+ </span><span class="s4">&quot;┐&quot;</span><span class="s2">)</span>
+    <span class="s1">print</span><span class="s2">(</span><span class="s4">&quot;│ &quot; </span><span class="s2">+ </span><span class="s1">message </span><span class="s2">+ </span><span class="s4">&quot; │&quot;</span><span class="s2">)</span>
+    <span class="s1">print</span><span class="s2">(</span><span class="s4">&quot;└&quot; </span><span class="s2">+ </span><span class="s4">&quot;─&quot; </span><span class="s2">* </span><span class="s1">width </span><span class="s2">+ </span><span class="s4">&quot;┘&quot;</span><span class="s2">)</span>
+
+<span class="s0">def </span><span class="s1">crawlQuotes</span><span class="s2">():</span>
+    <span class="s1">url </span><span class="s2">= </span><span class="s4">&quot;https://quotes.toscrape.com/&quot;</span>
+    <span class="s1">response </span><span class="s2">= </span><span class="s1">requests</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s1">url</span><span class="s2">, </span><span class="s1">headers</span><span class="s2">=</span><span class="s1">headers</span><span class="s2">)</span>
+    <span class="s1">soup </span><span class="s2">= </span><span class="s1">BeautifulSoup</span><span class="s2">(</span><span class="s1">response</span><span class="s2">.</span><span class="s1">text</span><span class="s2">,</span><span class="s4">&quot;html.parser&quot;</span><span class="s2">)</span>
+    <span class="s1">quotes </span><span class="s2">= </span><span class="s1">soup</span><span class="s2">.</span><span class="s1">find_all</span><span class="s2">(</span><span class="s4">&quot;div&quot;</span><span class="s2">,{</span><span class="s4">&quot;class&quot; </span><span class="s2">: </span><span class="s4">&quot;quote&quot;</span><span class="s2">})</span>
+
+    <span class="s5">#print(quotes)</span>
+
+    <span class="s0">for </span><span class="s1">quote </span><span class="s0">in </span><span class="s1">quotes</span><span class="s2">: </span><span class="s5"># looping over an array of all the quote boxes</span>
+        <span class="s1">tagArray </span><span class="s2">= []</span>
+        <span class="s1">text </span><span class="s2">= </span><span class="s1">quote</span><span class="s2">.</span><span class="s1">find</span><span class="s2">(</span><span class="s4">&quot;span&quot;</span><span class="s2">,{</span><span class="s4">&quot;class&quot; </span><span class="s2">: </span><span class="s4">&quot;text&quot;</span><span class="s2">})</span>
+        <span class="s1">author </span><span class="s2">= </span><span class="s1">quote</span><span class="s2">.</span><span class="s1">find</span><span class="s2">(</span><span class="s4">&quot;small&quot;</span><span class="s2">,{</span><span class="s4">&quot;class&quot; </span><span class="s2">: </span><span class="s4">&quot;author&quot;</span><span class="s2">})</span>
+
+        <span class="s1">tags </span><span class="s2">= </span><span class="s1">quote</span><span class="s2">.</span><span class="s1">find</span><span class="s2">(</span><span class="s4">&quot;div&quot;</span><span class="s2">,{</span><span class="s4">&quot;class&quot; </span><span class="s2">: </span><span class="s4">&quot;tags&quot;</span><span class="s2">})</span>
+        <span class="s1">tagList </span><span class="s2">= </span><span class="s1">tags</span><span class="s2">.</span><span class="s1">find_all</span><span class="s2">(</span><span class="s4">&quot;a&quot;</span><span class="s2">,{</span><span class="s4">&quot;class&quot; </span><span class="s2">: </span><span class="s4">&quot;tag&quot;</span><span class="s2">})</span>
+
+        <span class="s0">for </span><span class="s1">tag </span><span class="s0">in </span><span class="s1">tagList</span><span class="s2">:</span>
+            <span class="s5">#print(tag.text)</span>
+            <span class="s1">tagArray</span><span class="s2">.</span><span class="s1">append</span><span class="s2">(</span><span class="s1">tag</span><span class="s2">.</span><span class="s1">text</span><span class="s2">)</span>
+
+
+        <span class="s1">dataset</span><span class="s2">.</span><span class="s1">append</span><span class="s2">([</span><span class="s1">text</span><span class="s2">.</span><span class="s1">text</span><span class="s2">, </span><span class="s1">author</span><span class="s2">.</span><span class="s1">text </span><span class="s2">, </span><span class="s1">tagArray</span><span class="s2">])</span>
+
+    <span class="s1">table </span><span class="s2">= </span><span class="s1">tabulate</span><span class="s2">(</span><span class="s1">dataset</span><span class="s2">,</span><span class="s1">headers </span><span class="s2">= [</span><span class="s4">&quot;Quote&quot;</span><span class="s2">, </span><span class="s4">&quot;Author&quot;</span><span class="s2">, </span><span class="s4">&quot;Themes&quot;</span><span class="s2">], </span><span class="s1">tablefmt </span><span class="s2">= </span><span class="s4">&quot;grid&quot;</span><span class="s2">)</span>
+    <span class="s1">print</span><span class="s2">(</span><span class="s1">table</span><span class="s2">)</span>
+
+<span class="s0">def </span><span class="s1">crawlWikipedia</span><span class="s2">():</span>
+    <span class="s1">endof </span><span class="s2">= </span><span class="s1">input</span><span class="s2">(</span><span class="s4">&quot;Enter a valid topic: &quot;</span><span class="s2">) </span><span class="s5"># enter topic</span>
+
+    <span class="s1">print</span><span class="s2">(</span><span class="s4">&quot;*&quot;</span><span class="s2">)</span>
+    <span class="s1">time</span><span class="s2">.</span><span class="s1">sleep</span><span class="s2">(</span><span class="s3">0.1</span><span class="s2">)</span>
+    <span class="s1">print</span><span class="s2">(</span><span class="s4">&quot;**&quot;</span><span class="s2">)</span>
+    <span class="s1">time</span><span class="s2">.</span><span class="s1">sleep</span><span class="s2">(</span><span class="s3">0.1</span><span class="s2">)</span>
+    <span class="s1">print</span><span class="s2">(</span><span class="s4">&quot;***&quot;</span><span class="s2">)</span>
+    <span class="s1">time</span><span class="s2">.</span><span class="s1">sleep</span><span class="s2">(</span><span class="s3">0.1</span><span class="s2">)</span>
+
+    <span class="s5"># formatting for url</span>
+    <span class="s1">endof </span><span class="s2">= </span><span class="s1">endof</span><span class="s2">.</span><span class="s1">replace</span><span class="s2">(</span><span class="s4">&quot; &quot;</span><span class="s2">, </span><span class="s4">&quot;_&quot;</span><span class="s2">)</span>
+    <span class="s1">endof </span><span class="s2">= </span><span class="s1">endof</span><span class="s2">.</span><span class="s1">lower</span><span class="s2">()</span>
+    <span class="s1">endof </span><span class="s2">= </span><span class="s1">endof</span><span class="s2">[</span><span class="s3">0</span><span class="s2">].</span><span class="s1">upper</span><span class="s2">() + </span><span class="s1">endof</span><span class="s2">[</span><span class="s3">1</span><span class="s2">:]</span>
+
+    <span class="s1">url </span><span class="s2">= </span><span class="s4">&quot;https://en.wikipedia.org/wiki/&quot; </span><span class="s2">+ </span><span class="s1">endof</span>
+
+    <span class="s1">print</span><span class="s2">(</span><span class="s4">&quot;fetching url: </span><span class="s0">\n</span><span class="s4">&quot; </span><span class="s2">+ </span><span class="s1">url </span><span class="s2">+ </span><span class="s4">&quot;</span><span class="s0">\n</span><span class="s4">&quot;</span><span class="s2">)</span>
+
+    <span class="s1">sectionList </span><span class="s2">= []</span>
+    <span class="s1">response </span><span class="s2">= </span><span class="s1">requests</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s1">url</span><span class="s2">, </span><span class="s1">headers</span><span class="s2">=</span><span class="s1">headers</span><span class="s2">)</span>
+    <span class="s1">soup </span><span class="s2">= </span><span class="s1">BeautifulSoup</span><span class="s2">(</span><span class="s1">response</span><span class="s2">.</span><span class="s1">text</span><span class="s2">, </span><span class="s4">&quot;html.parser&quot;</span><span class="s2">)</span>
+
+    <span class="s0">if </span><span class="s1">response</span><span class="s2">.</span><span class="s1">status_code </span><span class="s2">!= </span><span class="s3">200</span><span class="s2">:   </span><span class="s5"># checking for 404 error or if we're not allowed in the page</span>
+        <span class="s1">box</span><span class="s2">(</span><span class="s4">&quot;Page not found, going back to the main page&quot;</span><span class="s2">)</span>
+        <span class="s1">time</span><span class="s2">.</span><span class="s1">sleep</span><span class="s2">(</span><span class="s3">2.5</span><span class="s2">)</span>
+        <span class="s1">scrapingTime</span><span class="s2">()</span>
+        <span class="s0">return</span>
+
+    <span class="s1">sections </span><span class="s2">= </span><span class="s1">soup</span><span class="s2">.</span><span class="s1">find_all</span><span class="s2">(</span><span class="s4">&quot;section&quot;</span><span class="s2">) </span><span class="s5"># getting sections</span>
+    <span class="s0">for </span><span class="s1">section </span><span class="s0">in </span><span class="s1">sections</span><span class="s2">:</span>
+        <span class="s1">sectionList</span><span class="s2">.</span><span class="s1">append</span><span class="s2">(</span><span class="s1">section</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s4">&quot;aria-labelledby&quot;</span><span class="s2">))</span>
+
+    <span class="s1">section </span><span class="s2">= </span><span class="s1">soup</span><span class="s2">.</span><span class="s1">find</span><span class="s2">(</span><span class="s4">&quot;section&quot;</span><span class="s2">, {</span><span class="s4">&quot;aria-labelledby&quot;</span><span class="s2">: </span><span class="s4">&quot;Overview&quot;</span><span class="s2">})  </span><span class="s5"># looking for if theres an overview</span>
+    <span class="s0">if </span><span class="s1">section</span><span class="s2">:</span>
+        <span class="s1">paragraphs </span><span class="s2">= </span><span class="s1">section</span><span class="s2">.</span><span class="s1">find_all</span><span class="s2">(</span><span class="s4">&quot;p&quot;</span><span class="s2">)</span>
+
+        <span class="s0">for </span><span class="s1">paragraph </span><span class="s0">in </span><span class="s1">paragraphs</span><span class="s2">:</span>
+            <span class="s1">text </span><span class="s2">= </span><span class="s1">paragraph</span><span class="s2">.</span><span class="s1">get_text</span><span class="s2">()</span>
+            <span class="s1">text </span><span class="s2">= </span><span class="s1">re</span><span class="s2">.</span><span class="s1">sub</span><span class="s2">(</span><span class="s4">r&quot;\[.*?\]&quot;</span><span class="s2">, </span><span class="s4">&quot;&quot;</span><span class="s2">, </span><span class="s1">text</span><span class="s2">)</span>
+            <span class="s1">dataset</span><span class="s2">.</span><span class="s1">append</span><span class="s2">(</span><span class="s1">text </span><span class="s2">+ </span><span class="s4">&quot;</span><span class="s0">\n</span><span class="s4">&quot;</span><span class="s2">)</span>
+    <span class="s0">else</span><span class="s2">:</span>
+        <span class="s1">box</span><span class="s2">(</span><span class="s4">&quot;No Overview section found, would you like to search in a section that's in the page?&quot;</span><span class="s2">)</span>
+
+        <span class="s0">while True</span><span class="s2">: </span><span class="s5"># infinite loop</span>
+
+            <span class="s1">choice </span><span class="s2">= </span><span class="s1">input</span><span class="s2">(</span><span class="s4">&quot;Enter your choice (yes or no): &quot;</span><span class="s2">).</span><span class="s1">lower</span><span class="s2">()</span>
+
+            <span class="s0">if </span><span class="s1">choice </span><span class="s2">== </span><span class="s4">&quot;no&quot;</span><span class="s2">:</span>
+                <span class="s1">print</span><span class="s2">(</span><span class="s4">&quot;Very well!&quot;</span><span class="s2">)</span>
+                <span class="s1">time</span><span class="s2">.</span><span class="s1">sleep</span><span class="s2">(</span><span class="s3">1.5</span><span class="s2">)</span>
+                <span class="s1">scrapingTime</span><span class="s2">()</span>
+                <span class="s0">return</span>
+
+            <span class="s0">elif </span><span class="s1">choice </span><span class="s2">== </span><span class="s4">&quot;yes&quot;</span><span class="s2">:</span>
+                <span class="s1">box</span><span class="s2">(</span><span class="s4">&quot;Okay! showing you the other sections of this page:&quot;</span><span class="s2">)</span>
+                <span class="s1">print</span><span class="s2">(</span><span class="s1">str</span><span class="s2">(</span><span class="s1">sectionList</span><span class="s2">))</span>
+
+                <span class="s1">desiredSection </span><span class="s2">= </span><span class="s1">input</span><span class="s2">(</span><span class="s4">&quot;Enter desired section: &quot;</span><span class="s2">)       </span><span class="s5"># validating for section search</span>
+                <span class="s1">desiredSection </span><span class="s2">= </span><span class="s1">desiredSection</span><span class="s2">.</span><span class="s1">replace</span><span class="s2">(</span><span class="s4">&quot; &quot;</span><span class="s2">, </span><span class="s4">&quot;_&quot;</span><span class="s2">)</span>
+                <span class="s1">desiredSection </span><span class="s2">= </span><span class="s1">desiredSection</span><span class="s2">.</span><span class="s1">lower</span><span class="s2">()</span>
+                <span class="s1">desiredSection </span><span class="s2">= </span><span class="s1">desiredSection</span><span class="s2">[</span><span class="s3">0</span><span class="s2">].</span><span class="s1">upper</span><span class="s2">() + </span><span class="s1">desiredSection</span><span class="s2">[</span><span class="s3">1</span><span class="s2">:]</span>
+
+                <span class="s1">section </span><span class="s2">= </span><span class="s1">soup</span><span class="s2">.</span><span class="s1">find</span><span class="s2">(</span><span class="s4">&quot;section&quot;</span><span class="s2">, {</span><span class="s4">&quot;aria-labelledby&quot;</span><span class="s2">: </span><span class="s1">desiredSection</span><span class="s2">}) </span><span class="s5"># finding sections</span>
+                <span class="s0">if </span><span class="s1">section</span><span class="s2">:</span>
+                    <span class="s1">paragraphs </span><span class="s2">= </span><span class="s1">section</span><span class="s2">.</span><span class="s1">find_all</span><span class="s2">(</span><span class="s4">&quot;p&quot;</span><span class="s2">) </span><span class="s5"># finding all paragraphs (html marked as p)</span>
+                    <span class="s1">print</span><span class="s2">(</span><span class="s4">&quot;****************************************************************************************&quot;</span><span class="s2">)</span>
+
+                    <span class="s0">for </span><span class="s1">paragraph </span><span class="s0">in </span><span class="s1">paragraphs</span><span class="s2">:</span>
+                        <span class="s1">text </span><span class="s2">= </span><span class="s1">paragraph</span><span class="s2">.</span><span class="s1">get_text</span><span class="s2">()</span>
+                        <span class="s1">text </span><span class="s2">= </span><span class="s1">re</span><span class="s2">.</span><span class="s1">sub</span><span class="s2">(</span><span class="s4">r&quot;\[.*?\]&quot;</span><span class="s2">, </span><span class="s4">&quot;&quot;</span><span class="s2">, </span><span class="s1">text</span><span class="s2">)</span>
+                        <span class="s1">print</span><span class="s2">(</span><span class="s1">text</span><span class="s2">)</span>
+
+                    <span class="s1">box</span><span class="s2">(</span><span class="s4">&quot;would you still like to keep crawling or stop?&quot;</span><span class="s2">)</span>
+
+                    <span class="s0">while True</span><span class="s2">:</span>
+                        <span class="s1">choice </span><span class="s2">= </span><span class="s1">input</span><span class="s2">(</span><span class="s4">&quot;Enter your choice (keep crawling (1), or stop (2)?): &quot;</span><span class="s2">)</span>
+
+                        <span class="s0">if </span><span class="s1">choice </span><span class="s2">== </span><span class="s4">&quot;1&quot;</span><span class="s2">:</span>
+                            <span class="s1">crawlWikipedia</span><span class="s2">()</span>
+                            <span class="s0">return</span>
+
+                        <span class="s0">elif </span><span class="s1">choice </span><span class="s2">== </span><span class="s4">&quot;2&quot;</span><span class="s2">:</span>
+                            <span class="s1">sys</span><span class="s2">.</span><span class="s1">exit</span><span class="s2">()</span>
+
+                        <span class="s0">else</span><span class="s2">:</span>
+                            <span class="s1">print</span><span class="s2">(</span><span class="s4">&quot;Please enter 1 or 2.&quot;</span><span class="s2">)</span>
+
+                    <span class="s0">break</span>
+
+                <span class="s0">else</span><span class="s2">:</span>
+                    <span class="s1">print</span><span class="s2">(</span><span class="s4">&quot;Section not found.&quot;</span><span class="s2">)</span>
+
+
+
+
+
+
+
+
+
+
+
+
+   <span class="s5"># print(&quot;&quot;.join(dataset))</span>
+
+   <span class="s5"># sectionText.</span>
+    <span class="s5">#print(soup)</span>
+    <span class="s5">#print(section.text)</span>
+
+
+
+
+<span class="s5">#print(response.text)</span>
+
+<span class="s0">def </span><span class="s1">scrapingTime</span><span class="s2">():</span>
+    <span class="s1">print</span><span class="s2">(</span><span class="s4">r&quot;&quot;&quot;\ 
+    *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *   
+               ____                      , 
+              /---.'.__             ____// 
+                   '--.\           /.---' 
+              _______  \\         // 
+            /.------.\  \|      .'/  ______ 
+           //  ___  \ \ ||/|\  //  _/_----.\__ 
+          |/  /.-.\  \ \:|&lt; &gt;|// _/.'..\   '--' 
+             //   \'. | \'.|.'/ /_/ /  \\ 
+            //     \ \_\/&quot; ' ~\-'.-'    \\ 
+           //       '-._| :-: |'-.__     \\ 
+          //           (/'==='\)'-._\     || 
+          ||                        \\    \| 
+          ||                         \\    ' 
+          |/                          \\ 
+                                       || 
+                                       || 
+                                       \\ 
+                                        ' 
+                            
+    *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  * 
+                                               
+    [!] &quot;Thank you for using NIGHTCRAWLER page scraper and web crawler! what would you like to do?&quot; 
+     
+    [1] Scrape a table of quotes! 
+    [2] Scrape information from Wikipedia! 
+    [3] End the program. 
+                &quot;&quot;&quot;</span><span class="s2">)</span>
+
+
+    <span class="s0">while </span><span class="s1">picking </span><span class="s2">== </span><span class="s0">True</span><span class="s2">:</span>
+        <span class="s0">try</span><span class="s2">:</span>
+            <span class="s1">choice </span><span class="s2">= </span><span class="s1">int</span><span class="s2">(</span><span class="s1">input</span><span class="s2">(</span><span class="s4">&quot;Enter your choice: &quot;</span><span class="s2">))</span>
+
+            <span class="s0">if </span><span class="s1">choice </span><span class="s2">&lt; </span><span class="s3">1 </span><span class="s0">or </span><span class="s1">choice </span><span class="s2">&gt; </span><span class="s3">3</span><span class="s2">:</span>
+                <span class="s1">box</span><span class="s2">(</span><span class="s4">&quot;Please enter a valid number&quot;</span><span class="s2">)</span>
+
+            <span class="s0">else</span><span class="s2">:</span>
+                <span class="s0">break</span>
+
+
+        <span class="s0">except </span><span class="s1">ValueError</span><span class="s2">:</span>
+            <span class="s1">box</span><span class="s2">(</span><span class="s4">&quot;Please enter a valid number&quot;</span><span class="s2">)</span>
+
+
+    <span class="s1">match choice</span><span class="s2">:</span>
+        <span class="s1">case </span><span class="s3">1</span><span class="s2">:</span>
+            <span class="s1">crawlQuotes</span><span class="s2">()</span>
+        <span class="s1">case </span><span class="s3">2</span><span class="s2">:</span>
+            <span class="s1">crawlWikipedia</span><span class="s2">()</span>
+        <span class="s1">case </span><span class="s3">3</span><span class="s2">:</span>
+            <span class="s1">box</span><span class="s2">(</span><span class="s4">&quot;Goodbye&quot;</span><span class="s2">)</span>
+
+<span class="s1">scrapingTime</span><span class="s2">()</span></pre>
+</body>
+</html>
