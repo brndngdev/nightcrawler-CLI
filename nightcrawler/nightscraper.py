@@ -48,7 +48,7 @@ def crawlQuotes():
     print(table)
 
 def crawlWikipedia():
-    endof = input("Enter a valid topic: ") # enter topic
+    topic = input("Enter a valid topic: ") # enter topic
 
     print("*")
     time.sleep(0.1)
@@ -58,11 +58,10 @@ def crawlWikipedia():
     time.sleep(0.1)
 
     # formatting for url
-    endof = endof.replace(" ", "_")
-    endof = endof.lower()
-    endof = endof[0].upper() + endof[1:]
+    topic = topic.replace(" ", "_") # changed the old variable "endof" which didnt mean anything to a more meaningful variable name "topic"
+    topic = topic.lower()
 
-    url = "https://en.wikipedia.org/wiki/" + endof
+    url = "https://en.wikipedia.org/wiki/" + topic
 
     print("fetching url: \n" + url + "\n")
 
@@ -86,8 +85,8 @@ def crawlWikipedia():
 
         for paragraph in paragraphs:
             text = paragraph.get_text()
-            text = re.sub(r"\[.*?\]", "", text) # removing hashtag text like edit and stuff
-            dataset.append(text + "\n") # adding new line after every paragraph
+            text = re.sub(r"\[.*?\]", "", text) # removing square bracket text like edit and stuff
+            dataset.append(text + "\n") # adding a new line after every paragraph
             print(text)  # show it to the user
 
         time.sleep(1.5)
@@ -99,7 +98,7 @@ def crawlWikipedia():
     else:
         box("No Overview section found, would you like to search in a section that's in the page?")
 
-        while True: # infinite loop
+        while True: # infinite loop. Dangerous, I know..
 
             choice = input("Would you like to explore other sections? (yes or no): ").lower()
 
@@ -137,25 +136,12 @@ def crawlWikipedia():
                             return
 
                         elif choice == "2":
-                            sys.exit()
+                            sys.exit() # terminate the script
                             return
-
-
-
+                            
                     break
-
                 else:
                     print("Section not found.")
-
-
-
-
-
-
-
-
-
-
 
 
    # print("".join(dataset))
@@ -164,10 +150,7 @@ def crawlWikipedia():
     #print(soup)
     #print(section.text)
 
-
-
-
-#print(response.text)
+ #print(response.text)
 
 def scrapingTime():
     print(r"""\
@@ -223,7 +206,7 @@ def scrapingTime():
         case 2:
             crawlWikipedia()
         case 3:
-            box("This CLI doesnt pull disambiguation paragraphs like bullet points because that's quiite complicated, you can pull paragraphs and text though!")
+            box("This CLI doesnt pull disambiguation paragraphs like bullet points because that's quiiite complicated, you can pull paragraphs and text though!")
             print("credits to: brndn")
             time.sleep(3)
             scrapingTime()
